@@ -10,7 +10,7 @@ Firecoin Auto Tap-Tap
 ## instalasi
 Butuh node.js [( LINK DOWNLOAD )](https://nodejs.org/en/download/prebuilt-installer)
 ```shell
->> git clone https://github.com/Ardx-f/Firecoin-bot
+>> git clone https://github.com/Ardx-f/Firecoin
 >> cd Firecoin-bot
 >> npm install
 >> node index
