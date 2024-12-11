@@ -5,7 +5,7 @@ import fs from 'fs';
 import chalk from 'chalk';
 
 const saiki = momentTimezone().tz('Asia/Jakarta').format('HH:mm:ss');
-const header = chalk.bgBlue.white(`[ ${saiki} ]`);
+const header = chalk.bgMagenta.white(`[ ${saiki} ]`);
 const inicranjg = chalk.whiteBright('Ardiyan Mahessa - SurrealFlux');
 const asciiArt = chalk.magenta(`  █████▒██▓ ██▀███  ▓█████ ▄████▄  ▒█████   ██▓ ███▄    █ 
 ▓██   ▒▓██▒▓██ ▒ ██▒▓█   ▀▒██▀ ▀█ ▒██▒  ██▒▓██▒ ██ ▀█   █ 
@@ -44,13 +44,15 @@ function getNewSessionInput() {
     const name = readlineSync.question(`[ ${header} ] Nama Session: `);
     const token = readlineSync.question(`[ ${header} ] Token: `);
     const tapLevel = readlineSync.questionInt(`[ ${header} ] Tap Level: `);
-    const baggage = readlineSync.question(`[ ${header} ] Baggage: `);
-    const sentryTrace = readlineSync.question(`[ ${header} ] Sentry Trace: `);
+    // Menghapus input untuk baggage dan sentry trace, memberikan nilai default ""
+    const baggage = "";
+    const sentryTrace = "";
     const sleepTime = readlineSync.questionInt(`[ ${header} ] Sleep Time (ms): `);
     return {
         name, token, tapLevel, baggage, sentryTrace, sleepTime
     };
 }
+
 
 async function loadState(token, tapLevel, baggage, sentryTrace) {
     let retryCount = 0;
@@ -120,7 +122,7 @@ async function runSession(sessionData) {
         const result = await sendClick(clicks, token, tapLevel, baggage, sentryTrace);
         if (!result) return;
         const { nextUser } = result;
-        console.log(`[ ${chalk.green('INFO')} ${sessionData.name} ] ID: ${nextUser.id} | Nama: ${nextUser.name} | Clicks: ${nextUser.clicks}`);
+        console.log(`[ ${chalk.magenta('INFO')} ${sessionData.name} ] ID: ${nextUser.id} | Nama: ${nextUser.name} | Clicks: ${nextUser.clicks}`);
         clicks += tapLevel;
         await new Promise(resolve => setTimeout(resolve, sleepTime));
         const newState = await loadState(token, tapLevel, baggage, sentryTrace);
@@ -137,79 +139,81 @@ async function runSession(sessionData) {
     let continueRunning = true;
 
     while (continueRunning) {
-        console.log(chalk.magenta('Menu:'));
-        console.log('1. Tambah session baru');
-        console.log('2. Tambah beberapa session');
-        console.log('3. Gunakan session yang ada');
-        console.log('4. Hapus session');
-        console.log('5. Keluar');
-        const choice = readlineSync.keyInSelect(['Tambah session baru', 'Tambah beberapa session', 'Gunakan session yang ada', 'Hapus session', 'Keluar'], 'Pilih opsi:');
+        
+        const choice = readlineSync.keyInSelect(
+            ['Tambah session baru', 'Tambah beberapa session', 'Gunakan session yang ada', 'Hapus session', 'Keluar'], 
+            chalk.magenta('Pilih opsi:')
+        );
 
-        switch (choice) {
-            case 0:
-                const newSession = getNewSessionInput();
-                sessionData.sessions[newSession.name] = newSession;
-                saveSession(sessionData);
-                console.log(chalk.green('[ SUKSES ] Session baru berhasil ditambahkan.'));
-                break;
-
-            case 1:
-                const numSessions = readlineSync.questionInt('[ ' + header + ' ] Masukkan jumlah session yang ingin ditambah: ');
-                for (let i = 0; i < numSessions; i++) {
+        // Menghapus log angka yang muncul setelah pilihan
+        if (choice !== -1) {
+            console.log(""); // Ini akan mencegah angka lain yang tampil secara default
+            switch (choice) {
+                case 0:
                     const newSession = getNewSessionInput();
                     sessionData.sessions[newSession.name] = newSession;
-                    console.log(chalk.green(`[ SUKSES ] Session ${newSession.name} berhasil ditambahkan.`));
-                }
-                saveSession(sessionData);
-                break;
-
-            case 2: // Gunakan session yang ada
-                if (Object.keys(sessionData.sessions).length === 0) {
-                    console.log(chalk.red('[ ERROR ] Tidak ada session yang tersimpan.'));
+                    saveSession(sessionData);
+                    console.log(chalk.magenta('[ SUKSES ] Session baru berhasil ditambahkan.'));
                     break;
-                }
 
-                const sessionNames = Object.keys(sessionData.sessions);
-                const selectedSessionIndex = readlineSync.keyInSelect(sessionNames, `[ ${header} ] Pilih session yang ingin digunakan:`);
-                
-                if (selectedSessionIndex === -1) {
-                    console.log(chalk.yellow('[ INFO ] Pembatalan pemilihan session.'));
+                case 1:
+                    const numSessions = readlineSync.questionInt('[ ' + header + ' ] Masukkan jumlah session yang ingin ditambah: ');
+                    for (let i = 0; i < numSessions; i++) {
+                        const newSession = getNewSessionInput();
+                        sessionData.sessions[newSession.name] = newSession;
+                        console.log(chalk.magenta(`[ SUKSES ] Session ${newSession.name} berhasil ditambahkan.`));
+                    }
+                    saveSession(sessionData);
                     break;
-                }
 
-                const sessionNameToUse = sessionNames[selectedSessionIndex];
-                const sessionToRun = sessionData.sessions[sessionNameToUse];
-                console.log(chalk.green(`[ SUKSES ] Menggunakan session: ${sessionNameToUse}`));
-                await runSession(sessionToRun);
-                break;
+                case 2: // Gunakan session yang ada
+                    if (Object.keys(sessionData.sessions).length === 0) {
+                        console.log(chalk.red('[ ERROR ] Tidak ada session yang tersimpan.'));
+                        break;
+                    }
 
-            case 3: // Hapus session
-                if (Object.keys(sessionData.sessions).length === 0) {
-                    console.log(chalk.red('[ ERROR ] Tidak ada session yang tersimpan.'));
+                    const sessionNames = Object.keys(sessionData.sessions);
+                    const selectedSessionIndex = readlineSync.keyInSelect(sessionNames, `[ ${header} ] Pilih session yang ingin digunakan:`);
+                    
+                    if (selectedSessionIndex === -1) {
+                        console.log(chalk.red('[ INFO ] Pembatalan pemilihan session.'));
+                        break;
+                    }
+
+                    const sessionNameToUse = sessionNames[selectedSessionIndex];
+                    const sessionToRun = sessionData.sessions[sessionNameToUse];
+                    console.log(chalk.bgWhite.magenta(`[ SUKSES ] Menggunakan Session: ${sessionNameToUse}`));
+                    await runSession(sessionToRun);
                     break;
-                }
 
-                const sessionNamesToDelete = Object.keys(sessionData.sessions);
-                const selectedSessionToDeleteIndex = readlineSync.keyInSelect(sessionNamesToDelete, `[ ${header} ] Pilih session yang ingin dihapus:`);
-                
-                if (selectedSessionToDeleteIndex === -1) {
-                    console.log(chalk.yellow('[ INFO ] Pembatalan penghapusan session.'));
+                case 3: // Hapus session
+                    if (Object.keys(sessionData.sessions).length === 0) {
+                        console.log(chalk.red('[ ERROR ] Tidak Ada Session Yang Tersimpan.'));
+                        break;
+                    }
+
+                    const sessionNamesToDelete = Object.keys(sessionData.sessions);
+                    const selectedSessionToDeleteIndex = readlineSync.keyInSelect(sessionNamesToDelete, `[ ${header} ] Pilih session yang ingin dihapus:`);
+                    
+                    if (selectedSessionToDeleteIndex === -1) {
+                        console.log(chalk.yellow('[ INFO ] Pembatalan penghapusan session.'));
+                        break;
+                    }
+
+                    const sessionToDelete = sessionNamesToDelete[selectedSessionToDeleteIndex];
+                    delete sessionData.sessions[sessionToDelete];
+                    saveSession(sessionData);
+                    console.log(chalk.magenta('[ SUKSES ] Session telah dihapus.'));
                     break;
-                }
 
-                const sessionToDelete = sessionNamesToDelete[selectedSessionToDeleteIndex];
-                delete sessionData.sessions[sessionToDelete];
-                saveSession(sessionData);
-                console.log(chalk.green('[ SUKSES ] Session telah dihapus.'));
-                break;
+                case 4: // Keluar
+                    console.log(chalk.red('[ INFO ] Keluar dari program.'));
+                    continueRunning = false;
+                    break;
 
-            case 4: // Keluar
-                console.log(chalk.red('[ INFO ] Keluar dari program.'));
-                continueRunning = false;
-                break;
-
-            default:
-                break;
+                default:
+                    break;
+            }
         }
     }
 })();
